@@ -25,7 +25,13 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
         initPaints()
     }
 
+    fun clearDetections() {
+        results = emptyList()
+        invalidate()
+    }
+
     fun clear() {
+        results = emptyList()
         textPaint.reset()
         textBackgroundPaint.reset()
         boxPaint.reset()

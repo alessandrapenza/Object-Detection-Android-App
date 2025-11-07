@@ -24,7 +24,7 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), Detector.DetectorListener {
     private lateinit var binding: ActivityMainBinding
-    private val isFrontCamera = false
+    private val isFrontCamera = true
 
     private var preview: Preview? = null
     private var imageAnalyzer: ImageAnalysis? = null
@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
 
         val cameraSelector = CameraSelector
             .Builder()
-            .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+            .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
             .build()
 
         preview =  Preview.Builder()
@@ -161,7 +161,9 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
     }
 
     override fun onEmptyDetect() {
-        binding.overlay.invalidate()
+        runOnUiThread {
+            binding.overlay.clearDetections()
+        }
     }
 
     override fun onDetect(boundingBoxes: List<BoundingBox>, inferenceTime: Long) {

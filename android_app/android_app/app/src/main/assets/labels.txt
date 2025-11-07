@@ -1,4 +1,2 @@
-fork
-knife
-plate
-spoon
+phone
+bottle
