@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">YOLOv8 TfLite</string>
+
+    <string-array name="detection_modes">
+        <item>Bounding Box</item>
+        <item>Alert</item>
+    </string-array>
 </resources>
