@@ -36,6 +36,12 @@ class Detector(
         .add(CastOp(INPUT_IMAGE_TYPE))
         .build()
 
+    private fun getThresholdFor(index: Int, label: String): Float {
+        return CLASS_CONFIDENCE[label]
+            ?: DEFAULT_CONFIDENCE
+    }
+
+
     fun setup() {
         val model = FileUtil.loadMappedFile(context, modelPath)
         val options = Interpreter.Options()
@@ -122,29 +128,34 @@ class Detector(
                 arrayIdx += numElements
             }
 
-            if (maxConf > CONFIDENCE_THRESHOLD) {
-                val clsName = labels[maxIdx]
-                val cx = array[c] // 0
-                val cy = array[c + numElements] // 1
-                val w = array[c + numElements * 2]
-                val h = array[c + numElements * 3]
-                val x1 = cx - (w/2F)
-                val y1 = cy - (h/2F)
-                val x2 = cx + (w/2F)
-                val y2 = cy + (h/2F)
-                if (x1 < 0F || x1 > 1F) continue
-                if (y1 < 0F || y1 > 1F) continue
-                if (x2 < 0F || x2 > 1F) continue
-                if (y2 < 0F || y2 > 1F) continue
+            if (maxIdx < 0 || maxIdx >= labels.size) continue
+            val clsName = labels[maxIdx]
 
-                boundingBoxes.add(
-                    BoundingBox(
-                        x1 = x1, y1 = y1, x2 = x2, y2 = y2,
-                        cx = cx, cy = cy, w = w, h = h,
-                        cnf = maxConf, cls = maxIdx, clsName = clsName
-                    )
+            // soglia per indice -> per nome -> default
+            val clsThreshold = getThresholdFor(maxIdx, clsName)
+            if (maxConf <= clsThreshold) continue
+
+            val cx = array[c] // 0
+            val cy = array[c + numElements] // 1
+            val w = array[c + numElements * 2]
+            val h = array[c + numElements * 3]
+            val x1 = cx - (w/2F)
+            val y1 = cy - (h/2F)
+            val x2 = cx + (w/2F)
+            val y2 = cy + (h/2F)
+            if (x1 < 0F || x1 > 1F) continue
+            if (y1 < 0F || y1 > 1F) continue
+            if (x2 < 0F || x2 > 1F) continue
+            if (y2 < 0F || y2 > 1F) continue
+
+            boundingBoxes.add(
+                BoundingBox(
+                    x1 = x1, y1 = y1, x2 = x2, y2 = y2,
+                    cx = cx, cy = cy, w = w, h = h,
+                    cnf = maxConf, cls = maxIdx, clsName = clsName
                 )
-            }
+            )
+
         }
 
         if (boundingBoxes.isEmpty()) return null
@@ -195,7 +206,11 @@ class Detector(
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.4F
+        private val CLASS_CONFIDENCE = mapOf(
+            "phone" to 0.35f,
+            "bottle" to 0.55f
+        )
+        private const val DEFAULT_CONFIDENCE = 0.3F
         private const val IOU_THRESHOLD = 0.5F
     }
 }
