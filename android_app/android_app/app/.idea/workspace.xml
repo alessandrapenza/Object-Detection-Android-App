@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9813cf60-d2c2-4d79-ac03-c5accd3bc46f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/main/assets/model.tflite" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/surendramaran/yolov8tflite/Detector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/surendramaran/yolov8tflite/Detector.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/surendramaran/yolov8tflite/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/surendramaran/yolov8tflite/MainActivity.kt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "alessandrapenza"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/alessandrapenza/Object-Detection-Android-App.git",
+    "accountId": "3e6d6347-6403-4840-a7c2-263b47e9b7b9"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="35NoqqxUYmtCUkUphpNZKx7TAst" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "android.gradle.sync.needed": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Users/aless/Documents/tesi magistrale/Object-Detection-Android-App/android_app/android_app/app"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9813cf60-d2c2-4d79-ac03-c5accd3bc46f" name="Changes" comment="" />
+      <created>1762960083785</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1762960083785</updated>
+    </task>
+    <servers />
+  </component>
+</project>
