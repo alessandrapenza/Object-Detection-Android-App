@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "YOLOv8 TfLite"
 include(":app")
+include(":Driver-Distraction-Library")

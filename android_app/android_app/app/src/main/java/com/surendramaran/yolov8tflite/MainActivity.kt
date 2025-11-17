@@ -10,6 +10,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
@@ -26,6 +27,8 @@ import com.surendramaran.yolov8tflite.Constants.MODEL_PATH
 import com.surendramaran.yolov8tflite.databinding.ActivityMainBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.aless.driver_distraction_library.DriverDetector
+import com.aless.driver_distraction_library.DriverState
 
 class MainActivity : AppCompatActivity(), Detector.DetectorListener {
     enum class DisplayMode { BOX, ALERT }
@@ -57,7 +60,9 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
     private var lastBoxes: List<BoundingBox>? = null
     private val SMOOTH_ALPHA = 0.6f      // 0.0 = tutto passato, 1.0 = tutto nuovo
 
-    private lateinit var detector: Detector
+    //private lateinit var detector: Detector
+
+    private lateinit var detector: DriverDetector
 
     private lateinit var cameraExecutor: ExecutorService
 
@@ -66,8 +71,17 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Init detector
-        detector = Detector(baseContext, MODEL_PATH, LABELS_PATH, this)
+        // Init APP DETECTOR
+        //detector = Detector(baseContext, MODEL_PATH, LABELS_PATH, this)
+        //detector.setup()
+
+        // Init LIBRARY DETECTOR
+        detector = DriverDetector(
+            context = this,
+            modelPath = "model.tflite",
+            labelPath = "labels.txt",
+            distractedLabels = setOf("phone", "bottle")
+        )
         detector.setup()
 
         // Spinner modalità
@@ -201,7 +215,25 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
                 matrix, true
             )
 
-            detector.detect(rotatedBitmap)
+            // Detect APP DETECTOR
+            //detector.detect(rotatedBitmap)
+
+            // Detect LIBRARY DETECTOR
+            val result = detector.detectState(rotatedBitmap)
+
+            Log.d("TestLibrary", "State = ${result.state}, conf = ${result.confidence}")
+            Log.d("TestLibrary", "Boxes = ${result.boxes.size}")
+
+            runOnUiThread {
+                when (result.state) {
+                    DriverState.ATTENTIVE -> {
+                        Toast.makeText(this, "ATTENTIVE (${result.confidence})", Toast.LENGTH_SHORT).show()
+                    }
+                    DriverState.DISTRACTED -> {
+                        Toast.makeText(this, "DISTRACTED (${result.confidence})", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
 
         cameraProvider.unbindAll()
