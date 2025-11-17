@@ -47,9 +47,9 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
 
     // --- THROTTLE + HOLD ---
     private var lastProcessedAt = 0L
-    private val MIN_INTERVAL_MS = 450L   // processa max ~8 fps (alza/abbassa a piacere)
+    private val MIN_INTERVAL_MS = 120L   // processa max ~8 fps (alza/abbassa a piacere)
 
-    private val HOLD_MS = 1000L           // mantieni le box per 0.4s dopo l’ultimo hit
+    private val HOLD_MS = 800L           // mantieni le box per 0.4s dopo l’ultimo hit
     private val uiHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val clearRunnable = Runnable { binding.overlay.clearDetections() }
 

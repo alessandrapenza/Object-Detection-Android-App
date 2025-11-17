@@ -1,8 +1,10 @@
 package com.surendramaran.yolov8tflite
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Log
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
@@ -36,11 +38,6 @@ class Detector(
         .add(CastOp(INPUT_IMAGE_TYPE))
         .build()
 
-    private fun getThresholdFor(index: Int, label: String): Float {
-        return CLASS_CONFIDENCE[label]
-            ?: DEFAULT_CONFIDENCE
-    }
-
 
     fun setup() {
         val model = FileUtil.loadMappedFile(context, modelPath)
@@ -56,6 +53,8 @@ class Detector(
         numChannel = outputShape[1]
         numElements = outputShape[2]
 
+        Log.d(TAG, "Model setup complete: input shape = ${inputShape.joinToString(",")}, output shape = ${outputShape.joinToString(",")}")
+
         try {
             val inputStream: InputStream = context.assets.open(labelPath)
             val reader = BufferedReader(InputStreamReader(inputStream))
@@ -68,9 +67,24 @@ class Detector(
 
             reader.close()
             inputStream.close()
+
+            Log.d(TAG, "Labels loaded: ${labels.size} labels found.")
         } catch (e: IOException) {
             e.printStackTrace()
+            Log.e(TAG, "Error loading labels: ${e.message}")
         }
+
+        val inTensor = interpreter!!.getInputTensor(0)
+        val inShape = inTensor.shape()
+        val inType = inTensor.dataType()
+        Log.d(TAG, "INPUT TENSOR #0 shape = ${inShape.joinToString(",")}")
+        Log.d(TAG, "INPUT TENSOR #0 type = $inType")
+
+        val outTensor = interpreter!!.getOutputTensor(0)
+        val outShape = outTensor.shape()
+        val outType = outTensor.dataType()
+        Log.d(TAG, "OUTPUT TENSOR #0 shape = ${outShape.joinToString(",")}")
+        Log.d(TAG, "OUTPUT TENSOR #0 type = $outType")
     }
 
     fun clear() {
@@ -80,38 +94,41 @@ class Detector(
 
     fun detect(frame: Bitmap) {
         interpreter ?: return
-        if (tensorWidth == 0) return
-        if (tensorHeight == 0) return
-        if (numChannel == 0) return
-        if (numElements == 0) return
+        if (tensorWidth == 0 || tensorHeight == 0 || numChannel == 0 || numElements == 0) {
+            Log.e(TAG, "Tensor dimensions not initialized correctly.")
+            return
+        }
 
         var inferenceTime = SystemClock.uptimeMillis()
 
         val resizedBitmap = Bitmap.createScaledBitmap(frame, tensorWidth, tensorHeight, false)
+        Log.d(TAG, "Image resized: ${resizedBitmap.width}x${resizedBitmap.height}")
 
         val tensorImage = TensorImage(DataType.FLOAT32)
         tensorImage.load(resizedBitmap)
         val processedImage = imageProcessor.process(tensorImage)
         val imageBuffer = processedImage.buffer
 
-        val output = TensorBuffer.createFixedSize(intArrayOf(1 , numChannel, numElements), OUTPUT_IMAGE_TYPE)
+        val output = TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements), OUTPUT_IMAGE_TYPE)
         interpreter?.run(imageBuffer, output.buffer)
 
+        Log.d(TAG, "Output size = ${output.floatArray.size}")  // Dovrebbe essere 1800 (300 predizioni * 6 valori per ciascuna)
+        Log.d(TAG, "Output values: ${output.floatArray.take(10).joinToString(", ")}")
 
         val bestBoxes = bestBox(output.floatArray)
         inferenceTime = SystemClock.uptimeMillis() - inferenceTime
 
-
-        if (bestBoxes == null) {
+        if (bestBoxes == null || bestBoxes.isEmpty()) {
+            Log.d(TAG, "No detections found.")
             detectorListener.onEmptyDetect()
             return
         }
 
+        Log.d(TAG, "Detections found: ${bestBoxes.size}")
         detectorListener.onDetect(bestBoxes, inferenceTime)
     }
 
-    private fun bestBox(array: FloatArray) : List<BoundingBox>? {
-
+    private fun bestBox(array: FloatArray): List<BoundingBox>? {
         val boundingBoxes = mutableListOf<BoundingBox>()
 
         for (c in 0 until numElements) {
@@ -119,7 +136,7 @@ class Detector(
             var maxIdx = -1
             var j = 4
             var arrayIdx = c + numElements * j
-            while (j < numChannel){
+            while (j < numChannel) {
                 if (array[arrayIdx] > maxConf) {
                     maxConf = array[arrayIdx]
                     maxIdx = j - 4
@@ -128,46 +145,51 @@ class Detector(
                 arrayIdx += numElements
             }
 
-            if (maxIdx < 0 || maxIdx >= labels.size) continue
-            val clsName = labels[maxIdx]
+            Log.d(TAG, "Processing box $c: maxConf = $maxConf, maxIdx = $maxIdx")
 
-            // soglia per indice -> per nome -> default
-            val clsThreshold = getThresholdFor(maxIdx, clsName)
-            if (maxConf <= clsThreshold) continue
+            if (maxConf > CONFIDENCE_THRESHOLD) {
+                val clsName = labels[maxIdx]
+                val cx = array[c] // 0
+                val cy = array[c + numElements] // 1
+                val w = array[c + numElements * 2]
+                val h = array[c + numElements * 3]
+                val x1 = cx - (w / 2F)
+                val y1 = cy - (h / 2F)
+                val x2 = cx + (w / 2F)
+                val y2 = cy + (h / 2F)
 
-            val cx = array[c] // 0
-            val cy = array[c + numElements] // 1
-            val w = array[c + numElements * 2]
-            val h = array[c + numElements * 3]
-            val x1 = cx - (w/2F)
-            val y1 = cy - (h/2F)
-            val x2 = cx + (w/2F)
-            val y2 = cy + (h/2F)
-            if (x1 < 0F || x1 > 1F) continue
-            if (y1 < 0F || y1 > 1F) continue
-            if (x2 < 0F || x2 > 1F) continue
-            if (y2 < 0F || y2 > 1F) continue
+                // Log box coordinates before adding to boundingBoxes
+                Log.d(TAG, "Box $c: [x1=$x1, y1=$y1, x2=$x2, y2=$y2, confidence=$maxConf]")
 
-            boundingBoxes.add(
-                BoundingBox(
-                    x1 = x1, y1 = y1, x2 = x2, y2 = y2,
-                    cx = cx, cy = cy, w = w, h = h,
-                    cnf = maxConf, cls = maxIdx, clsName = clsName
+                if (x1 < 0F || x1 > 1F || y1 < 0F || y1 > 1F || x2 < 0F || x2 > 1F || y2 < 0F || y2 > 1F) {
+                    Log.d(TAG, "Box $c is out of bounds, skipping.")
+                    continue
+                }
+
+                boundingBoxes.add(
+                    BoundingBox(
+                        x1 = x1, y1 = y1, x2 = x2, y2 = y2,
+                        cx = cx, cy = cy, w = w, h = h,
+                        cnf = maxConf, cls = maxIdx, clsName = clsName
+                    )
                 )
-            )
-
+            }
         }
 
-        if (boundingBoxes.isEmpty()) return null
+        if (boundingBoxes.isEmpty()) {
+            Log.d(TAG, "No valid bounding boxes found after processing.")
+            return null
+        }
 
+        Log.d(TAG, "Bounding boxes before NMS: ${boundingBoxes.size}")
         return applyNMS(boundingBoxes)
     }
 
-    private fun applyNMS(boxes: List<BoundingBox>) : MutableList<BoundingBox> {
+    private fun applyNMS(boxes: List<BoundingBox>): MutableList<BoundingBox> {
         val sortedBoxes = boxes.sortedByDescending { it.cnf }.toMutableList()
         val selectedBoxes = mutableListOf<BoundingBox>()
 
-        while(sortedBoxes.isNotEmpty()) {
+        while (sortedBoxes.isNotEmpty()) {
             val first = sortedBoxes.first()
             selectedBoxes.add(first)
             sortedBoxes.remove(first)
@@ -178,10 +200,12 @@ class Detector(
                 val iou = calculateIoU(first, nextBox)
                 if (iou >= IOU_THRESHOLD) {
                     iterator.remove()
+                    Log.d(TAG, "Box removed due to high IoU with $first")
                 }
             }
         }
 
+        Log.d(TAG, "Final selected boxes after NMS: ${selectedBoxes.size}")
         return selectedBoxes
     }
 
@@ -206,11 +230,8 @@ class Detector(
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private val CLASS_CONFIDENCE = mapOf(
-            "phone" to 0.35f,
-            "bottle" to 0.55f
-        )
-        private const val DEFAULT_CONFIDENCE = 0.3F
+
+        private const val CONFIDENCE_THRESHOLD = 0.4F
         private const val IOU_THRESHOLD = 0.5F
     }
 }
