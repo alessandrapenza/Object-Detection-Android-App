@@ -60,9 +60,9 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
     private var lastBoxes: List<BoundingBox>? = null
     private val SMOOTH_ALPHA = 0.6f      // 0.0 = tutto passato, 1.0 = tutto nuovo
 
-    //private lateinit var detector: Detector
+    private lateinit var detector: Detector
 
-    private lateinit var detector: DriverDetector
+    //private lateinit var detector: DriverDetector
 
     private lateinit var cameraExecutor: ExecutorService
 
@@ -72,17 +72,17 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
         setContentView(binding.root)
 
         // Init APP DETECTOR
-        //detector = Detector(baseContext, MODEL_PATH, LABELS_PATH, this)
-        //detector.setup()
+        detector = Detector(baseContext, MODEL_PATH, LABELS_PATH, this)
+        detector.setup()
 
         // Init LIBRARY DETECTOR
-        detector = DriverDetector(
-            context = this,
-            modelPath = "model.tflite",
-            labelPath = "labels.txt",
-            distractedLabels = setOf("phone", "bottle")
-        )
-        detector.setup()
+//        detector = DriverDetector(
+//            context = this,
+//            modelPath = "model.tflite",
+//            labelPath = "labels.txt",
+//            distractedLabels = setOf("phone", "bottle")
+//        )
+//        detector.setup()
 
         // Spinner modalità
         binding.spinnerMode.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
@@ -216,24 +216,25 @@ class MainActivity : AppCompatActivity(), Detector.DetectorListener {
             )
 
             // Detect APP DETECTOR
-            //detector.detect(rotatedBitmap)
+            detector.detect(rotatedBitmap)
 
             // Detect LIBRARY DETECTOR
-            val result = detector.detectState(rotatedBitmap)
+            //val result = detector.detectState(rotatedBitmap)
 
-            Log.d("TestLibrary", "State = ${result.state}, conf = ${result.confidence}")
-            Log.d("TestLibrary", "Boxes = ${result.boxes.size}")
-
-            runOnUiThread {
-                when (result.state) {
-                    DriverState.ATTENTIVE -> {
-                        Toast.makeText(this, "ATTENTIVE (${result.confidence})", Toast.LENGTH_SHORT).show()
-                    }
-                    DriverState.DISTRACTED -> {
-                        Toast.makeText(this, "DISTRACTED (${result.confidence})", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
+//            Log.d("TestLibrary", "State = ${result.state}, conf = ${result.confidence}")
+//            Log.d("TestLibrary", "Boxes = ${result.boxes.size}")
+//
+            //CLASSIFICAZIONE BINARIA x LIBRERIA
+//            runOnUiThread {
+//                when (result.state) {
+//                    DriverState.ATTENTIVE -> {
+//                        Toast.makeText(this, "ATTENTIVE (${result.confidence})", Toast.LENGTH_SHORT).show()
+//                    }
+//                    DriverState.DISTRACTED -> {
+//                        Toast.makeText(this, "DISTRACTED (${result.confidence})", Toast.LENGTH_SHORT).show()
+//                    }
+//                }
+//            }
         }
 
         cameraProvider.unbindAll()
